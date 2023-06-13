@@ -1,0 +1,16 @@
+{
+  "name": "ldf-parser",
+  "version": "1.0.0",
+  "description": "Parses lin description files",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "author": "radovancapek",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "typescript": "^5.1.3"
+  }
+}
