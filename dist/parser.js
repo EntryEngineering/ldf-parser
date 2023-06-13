@@ -220,14 +220,6 @@ function parseString(ldfString) {
             result.signalEncodingTypes[line[0]].signalRepresentation = signals;
         actIndex++;
     }
-    for (let i = startIndex; i < lines.length; i++) {
-        if (i === 0)
-            while (lines[i] !== "LIN_description_file;")
-                i++;
-        const line = lines[i].trim();
-        // console.log(i);
-        break;
-    }
     return result;
 }
 exports.parseString = parseString;
