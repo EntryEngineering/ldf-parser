@@ -1,6 +1,9 @@
-import { DiagnosticSignal, Frame, FrameSignal, LdfResult, LogicalValue, NodeAttributes, PhysicalRange, ScheduleTable, Signal, SignalEncodingType, SlaveGroup } from "./types";
+import { DiagnosticSignal, FrameSignals, LdfResult, LogicalValue, NodeAttributes, PhysicalRange, ScheduleTable, SignalEncodingType, SlaveGroup } from "./types";
 
-let result: LdfResult = {};
+let result: LdfResult = {
+    frames: {},
+    signals: {}
+};
 
 export function isResultEmpty(res: any): boolean {
     let empty = true;
@@ -12,8 +15,11 @@ export function isResultEmpty(res: any): boolean {
     return empty;
 }
 
-export function parseFile(file: Blob): Promise<any> {
-    result = {}
+export function parseFile(file: Blob): Promise<LdfResult> {
+    result = {
+        frames: {},
+        signals: {}
+    }
     const reader = new FileReader();
     return new Promise((resolve, reject) => {
         reader.onerror = () => {
@@ -22,7 +28,7 @@ export function parseFile(file: Blob): Promise<any> {
         };
         reader.onload = () => {
             if (reader.result) {
-                const ldf: any = parseString(reader.result.toString());
+                const ldf: LdfResult = parseString(reader.result.toString());
                 if (isResultEmpty(ldf)) {
                     reject(new DOMException("Problem parsing input file."));
                 } else {
@@ -34,7 +40,7 @@ export function parseFile(file: Blob): Promise<any> {
     })
 }
 
-export function parseString(ldfString: string): any {
+export function parseString(ldfString: string): LdfResult {
     const lines = ldfString.split(/\r?\n/);
 
     // HEADER
@@ -60,22 +66,20 @@ export function parseString(ldfString: string): any {
     }
 
     // SIGNALS
-    const signals: Signal[] = [];
     const signalsIndex = lines.findIndex(line => line === "Signals {");
     let actIndex = signalsIndex + 1;
     while (lines[actIndex] !== "}") {
         const signalLine = lines[actIndex].split(' ');
         const subscribers = signalLine.slice(4).map(subscriber => subscriber.slice(0, -1));
-        signals.push({
+        result.signals[signalLine[0].slice(0, -1).trim()] = {
             name: signalLine[0].slice(0, -1).trim(),
             size: parseInt(signalLine[1].slice(0, -1)),
             initialValue: parseInt(signalLine[2].slice(0, -1)),
             publisher: signalLine[3].slice(0, -1),
             subscribers: subscribers
-        })
+        }
         actIndex++;
     }
-    result.signals = signals;
 
     //DIAGNOSTIC SIGNALS
     const diagnosticSignals: DiagnosticSignal[] = [];
@@ -92,30 +96,28 @@ export function parseString(ldfString: string): any {
     result.diagnosticSignals = diagnosticSignals;
 
     // FRAMES
-    const frames: Frame[] = [];
     actIndex = lines.findIndex(line => line === "Frames {") + 1;
     while (lines[actIndex] !== "}") {
         const frameLine = lines[actIndex].split(/: | |, /)
-        const signals: FrameSignal[] = [];
+        const signals: FrameSignals = {}
         actIndex++;
         while (lines[actIndex] !== "}") {
             const signalLine = lines[actIndex].split(/, |;/);
-            signals.push({
+            signals[signalLine[0].trim()] = {
                 name: signalLine[0].trim(),
                 offset: parseInt(signalLine[1])
-            })
+            }
             actIndex++;
         }
-        frames.push({
+        result.frames[frameLine[0].trim()] = {
             name: frameLine[0].trim(),
             id: parseInt(frameLine[1]),
             publisher: frameLine[2],
             size: parseInt(frameLine[3]),
             signals: signals
-        })
+        }
         actIndex++;
     }
-    result.frames = frames
 
     // NODE ATTRIBUTES
     actIndex = lines.findIndex(line => line === "Node_attributes {") + 1;

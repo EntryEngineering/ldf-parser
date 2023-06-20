@@ -1,9 +1,9 @@
 export type LdfResult = {
     header?: LdfHeader;
     nodes?: Nodes;
-    signals?: Signal[];
+    signals: Signals;
     diagnosticSignals?: DiagnosticSignal[];
-    frames?: Frame[];
+    frames: Frames;
     scheduleTables?: ScheduleTable[];
     signalEncodingTypes?: SignalEncodingTypes;
 };
@@ -35,9 +35,15 @@ export type Signal = {
     publisher: string;
     subscribers: string[];
 };
+export type Signals = {
+    [key: string]: Signal;
+};
 export type FrameSignal = {
     name: string;
     offset: number;
+};
+export type FrameSignals = {
+    [key: string]: FrameSignal;
 };
 export type DiagnosticSignal = {
     name: string;
@@ -49,7 +55,10 @@ export type Frame = {
     id: number;
     publisher: string;
     size: number;
-    signals: FrameSignal[];
+    signals: FrameSignals;
+};
+export type Frames = {
+    [key: string]: Frame;
 };
 export type DiagnosticFrame = {
     name: string;

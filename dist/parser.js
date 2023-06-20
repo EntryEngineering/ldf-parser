@@ -1,7 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseString = exports.parseFile = exports.isResultEmpty = void 0;
-let result = {};
+let result = {
+    frames: {},
+    signals: {}
+};
 function isResultEmpty(res) {
     let empty = true;
     Object.values(res).forEach(value => {
@@ -13,7 +16,10 @@ function isResultEmpty(res) {
 }
 exports.isResultEmpty = isResultEmpty;
 function parseFile(file) {
-    result = {};
+    result = {
+        frames: {},
+        signals: {}
+    };
     const reader = new FileReader();
     return new Promise((resolve, reject) => {
         reader.onerror = () => {
@@ -58,22 +64,20 @@ function parseString(ldfString) {
         slaves: slaves
     };
     // SIGNALS
-    const signals = [];
     const signalsIndex = lines.findIndex(line => line === "Signals {");
     let actIndex = signalsIndex + 1;
     while (lines[actIndex] !== "}") {
         const signalLine = lines[actIndex].split(' ');
         const subscribers = signalLine.slice(4).map(subscriber => subscriber.slice(0, -1));
-        signals.push({
+        result.signals[signalLine[0].slice(0, -1).trim()] = {
             name: signalLine[0].slice(0, -1).trim(),
             size: parseInt(signalLine[1].slice(0, -1)),
             initialValue: parseInt(signalLine[2].slice(0, -1)),
             publisher: signalLine[3].slice(0, -1),
             subscribers: subscribers
-        });
+        };
         actIndex++;
     }
-    result.signals = signals;
     //DIAGNOSTIC SIGNALS
     const diagnosticSignals = [];
     actIndex = lines.findIndex(line => line === "Diagnostic_signals {") + 1;
@@ -88,30 +92,28 @@ function parseString(ldfString) {
     }
     result.diagnosticSignals = diagnosticSignals;
     // FRAMES
-    const frames = [];
     actIndex = lines.findIndex(line => line === "Frames {") + 1;
     while (lines[actIndex] !== "}") {
         const frameLine = lines[actIndex].split(/: | |, /);
-        const signals = [];
+        const signals = {};
         actIndex++;
         while (lines[actIndex] !== "}") {
             const signalLine = lines[actIndex].split(/, |;/);
-            signals.push({
+            signals[signalLine[0].trim()] = {
                 name: signalLine[0].trim(),
                 offset: parseInt(signalLine[1])
-            });
+            };
             actIndex++;
         }
-        frames.push({
+        result.frames[frameLine[0].trim()] = {
             name: frameLine[0].trim(),
             id: parseInt(frameLine[1]),
             publisher: frameLine[2],
             size: parseInt(frameLine[3]),
             signals: signals
-        });
+        };
         actIndex++;
     }
-    result.frames = frames;
     // NODE ATTRIBUTES
     actIndex = lines.findIndex(line => line === "Node_attributes {") + 1;
     while (lines[actIndex] !== "}") {
